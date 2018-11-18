@@ -187,7 +187,39 @@ body {
 <a name="imports-and-partials"></a>
 ## 2. Importing Files and Partials
 
-sometext
+In this, we'll look at how SASS lets you keep your CSS code DRY (Don't Repeat Yourself).
+
+### @import
+
+Anything you can do in CSS you can do in Sass, and that includes using the @import directive. But as you've probably come to expect, Sass extends @import in some useful ways. To start with, it supports inclusion of .sass and .scss files. The basic syntax is the same:
+```scss
+Syntax:
+@import <file name>
+```
+For example, **@import "colors"** will include colors.scss or colors.sass in the CSS ouput, if exists in the current directory. Notice that this is slightly different from the CSS @import directive: The file is included in the CSS; no extra http call will be required at runtime. This avoids one of the big performance problems with the standard CSS @import.
+
+You can override the default behavior in several ways. Each of the following, for example, will result in a standard CSS @import directive being output in the CSS:
+
+#### Examle: @import
+```scss
+@import "colors.css";                 //the .css extension is specified
+@import http://test.com/colors.css;  //the http:// prefix is used
+@import "colors" screen;             //the import statement includes a media query
+@import url(colors);                 //the url() function is used
+```
+
+The resulting CSS would include the following statements:
+
+#### CSS:
+```css
+@import "colors.css";               
+@import http://test.com/colors.css;
+@import "colors" screen:
+@import url(colors); 
+```
+
+You'll normally use the @import directive at the top of a file where its contents will have global scope. But with a few exceptions, you can also nest @import statements. You can't use nested imports within mixins (discussed later in next chapter) or inside control statements, but otherwise you can use @import wherever you need it.
+
 
 <a name="mixins"></a>
 ## 3. Mixins
