@@ -556,3 +556,195 @@ Passing content into a mixin isn't something you'll need to do very often, but i
 
 <a name="extend"></a>
 ## 4. @extend
+
+You'll often have a set of styles that expand on one another, and as we've seen, mixins are one way of handling that situation without duplicating code. But Sass provides another way, the @extend directive, which provides a kind of inheritance by allowing one style to include another.
+
+#### Inheritance with @extend
+Unlike mixins, you don't need to declare an extension explicitly. You can extend any class rule with the rules of other classes by simply including the @extend directive wherever you want the classes included. Here's an example:
+
+SCSS: @extend
+```scss
+.button-base {
+   radius: 2px;
+   margin: 5px;
+}
+
+.menu-button {
+   @extend .button-base;
+   background-color: blue;
+   color: white;
+}
+```
+which will be compiled as
+
+CSS:
+```css
+.button-base, .menu-button {
+   radius: 2px;
+   margin: 5px;
+}
+
+.menu-button {
+   background-color: blue;
+   color: white;
+}
+```
+Now you only need to specify .menu-button as the class, not both, to pick up both sets of styles. Like mixins, using the @extend directive in this way saves you the trouble of writing something like this: <a class=".button-base .menu-button">My Button</a>
+
+in your HTML, which is verbose and hard to remember.
+
+Inheritance Chains
+Like any object-oriented programming language, the @extend directive can be chained. That is, you can extend a class that extends another class:
+
+SCSS: Inheritance
+```scss
+.button-base {
+   margin: 2px;
+   radius: 2px;
+}
+
+.error-button {
+   @extend .button-base;
+   background-color: red;
+}
+
+.menu-button-error {
+   @extend .error-button;
+}
+```
+which is transpiled to:
+
+CSS:
+```css
+.button-base, .error-button, .menu-button-error {
+   margin: 2px;
+   radius: 2px;
+}
+
+.error-button, .menu-button-error {
+   background-color: red;
+}
+```
+##### Multiple Inheritance
+Unlike most object-oriented programming languages, which only allow inheritance from a single base class, you can use @extend as many different classes as you need to:
+
+SCSS:
+```scss
+.button-base {
+   margin: 2px;
+   radius: 2px;
+}
+
+.error-base {
+   background-color: red;
+}
+.error-button {
+   @extend .button-base;
+   @extend .error-base;
+}
+```
+Notice that it isn't necessary for the child class to contain any properties of its own. The example above results in the following CSS:
+
+CSS:
+```css
+.button-base, .error-button {
+   margin: 2px;
+   radius: 2px;
+}
+
+.error-base, .error-button {
+   background-color: red;
+}
+```
+Extending Other Selectors
+Only single selectors can be extended. You can't, for example, extend p.test. But you can use the @extend directive can be used to inherit styles from any single selector, no matter how complex. Selectors like p.error and pseudo-classes like :first-child work just fine. The syntax is the same:
+
+SCSS:
+```scss
+li:first-child {
+   color: red;
+}
+
+.link-list {
+   @extend li:first-child;
+}
+```
+which transpiles to
+
+CSS:
+```css
+li:first-child, .link-list {
+   color: red;
+}
+```
+#### Placeholder Selectors
+Did you notice that in all the examples above, the base class, the one that's called by the @extend directive, is included in the resulting CSS? This is different than the behavior or mixins, which are only output when they're called with the @include directive.
+
+Sass provides a mechanism for excluding the base class from the output via the placeholder selector, %. Simply add a % symbol before the name of the elector and it won't be included in the output:
+
+SCSS:
+```scss
+%button-base {
+   margin: 2px;
+   radius: 2px;
+}
+.error-button {
+   @extend %button-base;
+   background-color: red;
+}
+```
+This results in the following CSS output:
+
+CSS:
+```
+.error-button {
+   margin: 2px;
+   radius: 2px;
+}
+
+.error-button {
+   background-color: red;
+}
+```
+Of course, this isn't the most efficient CSS since the .error-button selector is used twice. But the example is just that, an example. In a real project, it probably wouldn't make sense to declare the placeholder unless you were going to use it more than once.
+
+Using @extend inside directives
+The current version of the Sass compiler can't efficiently extend classes inside directives such as @media unless the base class is also inside the directive, so at least for the time being-referencing a base class outside the directive will fail. You can reference classes within the context of the directive, however, so this works fine:
+
+SCSS:
+```scss
+@media print {
+   .text {
+      font-family: Sans Serif;
+   }
+
+   p {
+      @extend .text;
+      color: black;
+   }
+}
+```
+and results in the following CSS:
+
+CSS:
+```css
+@media print {
+   .text, p {
+      font-family: Sans Serif; 
+   }
+
+   p {
+      color: black; 
+   }
+}
+```
+#### Extending vs Mixins
+There's recently been a great deal of debate in the Sass community about the choice of mixins over the @extend directive, and the latter has come in for a bit of a battering.
+
+The functionality of the @extend directive and Sass mixins is very similar. In fact, you can't do anything with @extend that you can't also do with a mixin, and the @extend doesn't support variables, nor can it be used within @media directives. So why should you use it?
+
+Well, one reason is that it creates more compact CSS. A mixin copies its rules into whatever style that includes it. Using the @extend directive adjusts the selectors so that any given rule is only included once. On the other hand, mixins tend to compress to smaller size when using gzip. (Shay Howe has done some careful analysis of performance between mixing and the @extend directive. You'll find his results at Sass Mixins vs Extends Data.)
+
+Ultimately, it probably comes down to how you think about coding. Remember, Sass exists to make writing CSS more efficient and maintainable. If you come from an object-oriented background, using @extend to create inheritance relationships will be a comfortable pattern for you to work with. In most situations, the reduction in development time is worth a few extra bytes of CSS.
+
+If the whole object-oriented thing is a bit of a mystery to you, you might be more comfortable with mixins, and you can be confident that your CSS will be slightly smaller. There aren't any coding police. It's up to you to decide what will work for any specific styling problem in any specific project.
