@@ -220,11 +220,339 @@ The resulting CSS would include the following statements:
 
 You'll normally use the @import directive at the top of a file where its contents will have global scope. But with a few exceptions, you can also nest @import statements. You can't use nested imports within mixins (discussed later in next chapter) or inside control statements, but otherwise you can use @import wherever you need it.
 
+### Partials
+
+One of the best uses of the Sass @import directive is to create separate files containing all the standard definitions for your site-colors, font sizes and families and so forth-and then include them where you need them. This is, of course, a classic example of DRY programming.
+
+Since the sole purpose of these files is to be included in other Sass files, there's no point in transpiling them directly. In fact, many of them won't actually produce any CSS. An example of this is a file that includes only variable definitions: It would result in an empty CSS file.
+
+SCSS:
+```scss
+$red: #ff0000;
+$green: #00ff00;
+$blue: #0000ff;
+```
+If the Sass transpiler is watching a directory (either through the command window or via an editor extension), you'll want to exclude changes to these files from transpilation, and Sass makes it easy to do so. Just prepend an underscore to their names. Instead of colors.scss, for example, name the file _colors.scss. A file that The transpiler will ignore it, but you can still include it in other Sass files.
+
+Files like these are known as "partials", and you can include them in another .scss file in the normal way. By convention, the leading underscore is omitted, but you can include it if you wish. As we'll see:
+
+Sass:
+```scss
+@import "colors";   //by convention, omit the underscore
+@import "_colors";  //but this works, too
+```
+Structuring your CSS in this way doesn't have any performance penalties- you'll get clean, stand-alone CSS at the end of the transpilation process and it makes your code less repetitive and easier to maintain. In fact, if you examine CSS frameworks like Bootstrap 4 or MaterializeCSS you'll often find a single SCSS file that contains nothing but @import statements. All the other files are partials.
 
 <a name="mixins"></a>
 ## 3. Mixins
 
-sometext
+In recent years HTML has made great strides towards become more semantic. Tags like <aside> and <article> enforce the meaning of the content rather than its layout. Unfortunately, the same isn't true of CSS. Defining classes like .float-left, .row and .col is better than re-defining float properties for every HTML tag, but they hardly adds to the meaning of the HTML.
+
+There are CSS frameworks around they try to address the problem. (Semantic UI is a popular example; you'll find it at semantic-ui.com.) Sass provides another way, via the *@mixin* directive. Mixins are primarily used to provide non-semantic styling, but they can contain any valid CSS or Sass. The syntax is straight-forward:
+
+Syntax:
+```scss
+@mixin <name>
+{
+    <contents>
+}
+```
+Once you've created the mixin, simply use @include where you want the rules to be included in your file.
+
+Syntax:
+```scss
+<selector>
+{
+    @include <mixin-name>
+
+    [<other rules>]
+
+}
+```
+
+Let's look at a simple example.
+
+SCSS: Mixin
+```scss
+@mixin float-left {
+   float: left;
+}
+
+.call-out {
+  @include float-left;
+  background-color: gray;
+}
+```
+The resulting CSS will be:
+
+CSS:
+```css
+.call-out {
+   float: left;
+   background-color: gray;
+}
+```
+The mixin in the above example is defined in the same file where it's used, but you can (and usually will) define mixins in a partial. Just @import the file itself before you use the @include directive.
+
+A Sass mixin isn't restricted to just defining property rules; it can also include selectors, including parent selectors. Using this technique, you could, for example, define all the rules for a button-like link in a single mixin:
+
+SCSS:
+```scss
+@mixin a-button {
+   a {
+      background-color: blue;
+      color: white;
+      radius: 3px;
+      margin: 2px;
+      
+      &:hover {
+         color: red;
+      }
+
+      &:visited {
+         color: green;
+      }
+   }
+}
+```
+
+Use the @include directive to include this mixin in a style, as shown below:
+
+SCSS: @include Mixin
+```scss
+@include a-button.scss //assuming a-button.scss is the name of above mixin file
+
+.menu-button {
+   @include a-button;
+}
+```
+and the output would be:
+
+CSS:
+```css
+.menu-button a {
+   background-color: blue;
+   color: white;
+   radius: 3px;
+   margin: 2px;
+}
+.menu-button a:hover {
+   color: red;
+}
+.menu-button a:visited {
+   color: green;
+}
+```
+#### Mixin Variables
+If you have more than one class that includes this functionality, it's clear that previous exmample will save a lot of typing and be more maintainable. But what if you have several classes that have the same basic functionality, but you need to pass different colors? Sass makes it easy: just pass the colors as variables, which are defined like function parameters:
+
+SCSS: Mixin Variable
+```scss
+@mixin a-button($base, $hover, $link) {
+   a {
+      background-color: $base;
+      color: white;
+      radius: 3px;
+      margin: 2px;
+      
+      &:hover {
+         color: $hover;
+      }
+
+      &:visited {
+         color: $link;
+      }
+   }
+}
+```
+You pass the variable arguments to the mixin using the normal syntax:
+
+SCSS:
+```scss
+.menu-button {
+   @include a-button(blue, red, green);
+}
+.text-button {
+   @include a-button(yellow, black, grey);
+}
+```
+That example would result in the following CSS:
+
+CSS:
+```css
+.menu-button a {
+   background-color: blue;
+   color: white;
+   radius: 3px;
+   margin: 2px;
+}
+.menu-button a:hover {
+   color: red;
+}
+.menu-button a:visited {
+   color: green;
+}
+.text-button a {
+   background-color: yellow;
+   color: white;
+   radius: 3px;
+   margin: 2px;
+}
+.text-button a:hover {
+   color: black;
+}
+.text-button a:visited {
+   color: grey;
+}
+```
+Sass even lets you provide default values for mixin variables:
+
+SCSS:
+```scss
+@mixin a-button($base: red, $hover: green, $link: blue) {
+   a {
+      background-color: $base;
+      color: white;
+      radius: 3px;
+      margin: 2px;
+
+      &:hover {
+         color: $hover;
+      }
+
+      &:visited {
+         color: $link;
+      }
+   }
+}
+```
+When you define a default variable in this way, you only need to provide values that change when you include the mixin:
+
+SCSS:
+```scss
+.menu-button {
+   @include a-button($link: orange);
+}
+```
+This would result in the following CSS:
+
+CSS:
+```css
+.menu-button a {
+   background-color: blue;
+   color: white;
+   radius: 3px;
+   margin: 2px;
+}
+.menu-button a:hover {
+   color: red;
+}
+.menu-button a:visited {
+   color: orange;
+}
+```
+As you can see, the a:visited rule is assigned color:orange, as provided, but the other two rules have the default values.
+
+Just as when you call a Sass function, you only need to provide the parameter name if you're not including the arguments out of order or skipping some. This would work just fine (although the resulting button would be pretty ugly):
+
+SCSS:
+```scss
+.menu-button {
+    @include a-button(darkmagenta, darkolivegreen, skyblue);
+}
+```
+#### Variable Variables
+Some CSS properties can take different numbers of variables. An example is the margin property, which can take from 1 to 4 values. Sass supports this using variable arguments, which are declared with an ellipsis after their names:
+
+SCSS: Mixin Variables
+```scss
+@mixin margin-mix($margin...) {
+   margin: $margin;
+}
+```
+Given this mixin definition, any of the following @include directives will transpile without error:
+
+SCSS:
+```scss
+.narrow-border {
+   @include margin-mix(1px);
+}
+
+.top-bottom-border {
+  @include margin-mix(3px 2px);
+}
+
+.varied-border {
+   @include margin-mix(1px 3px 6px 10px);
+}
+```
+and with the expected results:
+
+CSS:
+```css
+.narrow-border {
+  margin: 1px; 
+}
+
+.top-bottom-border {
+  margin: 3px 2px;
+}
+
+.varied-border {
+  margin: 1px 3px 6px 10px; 
+}
+```
+Passing Content to Mixins
+Most often you'll use mixins for standard bits of styling that you'll use in multiple places and expand with additional rules when you include them. But you can build mixins that work the other way by passing a block of rules to the mixin. You don't need a variable to do this; the content you pass will be available to the mixin via the @content directive:
+
+SCSS:
+```scss
+@mixin has-content {
+   html {
+      @content;
+   }
+}
+
+@include has-content {
+   #logo {
+       background-image: url(logo.svg);
+   }
+}
+```
+This will result in the following CSS output:
+
+CSS:
+```css
+html #logo {
+   background-image: url(logo.svg);
+}
+```
+Notice the syntax here uses braces, not parentheses, to distinguish the content from any variables the mixin might declare. You can use both;
+
+SCSS:
+```scss
+@mixin test-content($color) {
+   .test {
+      color: $color;
+      @content;
+    }
+}
+
+@include test-content(blue) {
+   background-color: red;
+}
+```
+which will result in the following CSS:
+
+CSS:
+```css
+.test {
+   color: blue;
+   background-color: red;
+}
+```
+Passing content into a mixin isn't something you'll need to do very often, but it can be useful, particularly when you're dealing with media queries or browser-specific property names.
+
 
 <a name="extend"></a>
 ## 4. @extend
