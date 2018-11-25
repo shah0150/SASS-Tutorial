@@ -344,7 +344,7 @@ CSS:
 }
 ```
 #### Mixin Variables
-If you have more than one class that includes this functionality, it's clear that previous exmample will save a lot of typing and be more maintainable. But what if you have several classes that have the same basic functionality, but you need to pass different colors? Sass makes it easy: just pass the colors as variables, which are defined like function parameters:
+If you have more than one class that includes this functionality, it's clear that previous example will save a lot of typing and be more maintainable. But what if you have several classes that have the same basic functionality, but you need to pass different colors? Sass makes it easy: just pass the colors as variables, which are defined like function parameters:
 
 SCSS: Mixin Variable
 ```scss
